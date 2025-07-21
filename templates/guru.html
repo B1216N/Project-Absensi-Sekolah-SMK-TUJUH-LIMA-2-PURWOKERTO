@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Absensi Guru</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <style>
+    body { font-family: Arial; background: #eef2f5; text-align: center; padding: 20px; }
+    .section { display: none; max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
+    .active { display: block; }
+    input, button { padding: 10px; margin: 10px; width: 80%; }
+    table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 10px; }
+    th { background: #007BFF; color: white; }
+    canvas { margin: 20px auto; }
+  </style>
+</head>
+<body>
+
+<div class="section active" id="loginSection">
+  <h2>Login Guru</h2>
+  <input type="text" id="username" placeholder="Username" />
+  <input type="password" id="password" placeholder="Password" />
+  <button onclick="loginGuru()">Login</button>
+</div>
+
+<div class="section" id="barcodeSection">
+  <h2>Barcode Absensi</h2>
+  <canvas id="barcodeCanvas" width="200" height="200"></canvas>
+  <button onclick="showRiwayat()">Lihat Riwayat</button>
+  <button onclick="logout()">Logout</button>
+</div>
+
+<div class="section" id="riwayatSection">
+  <h2>Riwayat Kehadiran Hari Ini</h2>
+  <table>
+    <thead>
+      <tr><th>Nama</th><th>Waktu</th></tr>
+    </thead>
+    <tbody id="todayHistory"></tbody>
+  </table>
+  <button onclick="showBarcode()">Kembali</button>
+</div>
+
+<script>
+  function loginGuru() {
+    const u = document.getElementById("username").value;
+    const p = document.getElementById("password").value;
+    if (u === "guru" && p === "1234") {
+      document.getElementById("loginSection").classList.remove("active");
+      document.getElementById("barcodeSection").classList.add("active");
+      QRCode.toCanvas(document.getElementById('barcodeCanvas'), "AbsenSiswaHariIni", function (error) {
+        if (error) console.error(error);
+      });
+    } else {
+      alert("Login gagal.");
+    }
+  }
+
+  function logout() {
+    location.reload();
+  }
+
+  function showRiwayat() {
+    document.getElementById("barcodeSection").classList.remove("active");
+    document.getElementById("riwayatSection").classList.add("active");
+
+    fetch("/history")
+      .then(res => res.json())
+      .then(data => {
+        const today = new Date().toISOString().split("T")[0];
+        const tbody = document.getElementById("todayHistory");
+        tbody.innerHTML = "";
+        data.forEach(item => {
+          const waktu = new Date(item.waktu);
+          if (waktu.toISOString().split("T")[0] === today) {
+            const row = `<tr><td>${item.nama}</td><td>${waktu.toLocaleString()}</td></tr>`;
+            tbody.innerHTML += row;
+          }
+        });
+      });
+  }
+
+  function showBarcode() {
+    document.getElementById("riwayatSection").classList.remove("active");
+    document.getElementById("barcodeSection").classList.add("active");
+  }
+</script>
+
+</body>
+</html>

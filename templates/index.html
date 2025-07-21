@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Absensi Siswa</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body { font-family: Arial; background: #f4f4f4; text-align: center; padding: 20px; }
+    .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
+    input, button { padding: 10px; margin: 10px; width: 80%; }
+    #reader { width: 100%; margin: auto; }
+    #scanSection, #resultSection { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="container" id="loginSection">
+  <h2>Login Siswa</h2>
+  <input type="text" id="username" placeholder="Nama Siswa" />
+  <input type="password" id="password" placeholder="Password" />
+  <button onclick="login()">Login</button>
+</div>
+
+<div class="container" id="scanSection">
+  <h2>Scan Barcode</h2>
+  <div id="reader"></div>
+  <p id="scanResult"></p>
+</div>
+
+<script>
+  let siswaNama = "";
+  let scanner;
+
+  function login() {
+    const user = document.getElementById("username").value;
+    const pass = document.getElementById("password").value;
+
+    if (user && pass === "1234") {
+      siswaNama = user;
+      document.getElementById("loginSection").style.display = "none";
+      document.getElementById("scanSection").style.display = "block";
+      startScanner();
+    } else {
+      alert("Login gagal. Coba lagi.");
+    }
+  }
+
+  function startScanner() {
+    const qrSuccess = (decodedText) => {
+      if (decodedText === "AbsenSiswaHariIni") {
+        fetch("/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nama_siswa: siswaNama })
+        })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("scanResult").innerText = `✅ ${data.nama} absen pada ${data.waktu}`;
+          scanner.stop();
+        });
+      }
+    };
+
+    scanner = new Html5Qrcode("reader");
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      qrSuccess
+    ).catch(err => console.error("Kamera error:", err));
+  }
+</script>
+
+</body>
+</html>
