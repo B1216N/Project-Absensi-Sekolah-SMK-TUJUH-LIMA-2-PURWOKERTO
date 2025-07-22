@@ -6,25 +6,55 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body { font-family: Arial; background: #f4f4f4; text-align: center; padding: 20px; }
-    .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
-    input, button { padding: 10px; margin: 10px; width: 80%; }
+    .container { max-width: 500px; margin: auto; background: rgb(104, 189, 235); padding: 20px; border-radius: 10px; }
+    input, button { padding: 10px; margin: 10px; width: 80%; border-radius: 5px; border: none; }
     #reader { width: 100%; margin: auto; }
-    #scanSection, #resultSection { display: none; }
+    #scanSection, #historySection { display: none; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #fff; }
+    th, td { padding: 10px; border: 1px solid #ccc; }
+    th { background-color: #3498db; color: white; }
+    .button-group { display: flex; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+    .logout-button { background: red; color: white; }
+    .back-button { background: #2ecc71; color: white; }
   </style>
 </head>
 <body>
 
+<!-- Halaman Login -->
 <div class="container" id="loginSection">
+  <img src="image 2.png" alt="Logo Sekolah" style="width:120px; margin-bottom: 20px;">
   <h2>Login Siswa</h2>
   <input type="text" id="username" placeholder="Nama Siswa" />
   <input type="password" id="password" placeholder="Password" />
   <button onclick="login()">Login</button>
 </div>
 
+<!-- Halaman Scan -->
 <div class="container" id="scanSection">
   <h2>Scan Barcode</h2>
   <div id="reader"></div>
   <p id="scanResult"></p>
+  <button onclick="showHistory()">Lihat Riwayat Absen</button>
+</div>
+
+<!-- Halaman Riwayat -->
+<div class="container" id="historySection">
+  <h2>Riwayat Absensi</h2>
+  <table id="historyTable">
+    <thead>
+      <tr>
+        <th>Nama Siswa</th>
+        <th>Waktu Kehadiran</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Data dari JavaScript -->
+    </tbody>
+  </table>
+  <div class="button-group">
+    <button class="back-button" onclick="backToScan()">← Kembali</button>
+    <button class="logout-button" onclick="logout()">Logout</button>
+  </div>
 </div>
 
 <script>
@@ -67,6 +97,40 @@
       { fps: 10, qrbox: 250 },
       qrSuccess
     ).catch(err => console.error("Kamera error:", err));
+  }
+
+  function showHistory() {
+    document.getElementById("scanSection").style.display = "none";
+    document.getElementById("historySection").style.display = "block";
+
+    fetch(`/riwayat?nama_siswa=${encodeURIComponent(siswaNama)}`)
+      .then(res => res.json())
+      .then(data => {
+        const tbody = document.querySelector("#historyTable tbody");
+        tbody.innerHTML = "";
+        data.forEach(item => {
+          const row = `<tr><td>${item.nama}</td><td>${item.waktu}</td></tr>`;
+          tbody.insertAdjacentHTML("beforeend", row);
+        });
+      });
+  }
+
+  function backToScan() {
+    document.getElementById("historySection").style.display = "none";
+    document.getElementById("scanSection").style.display = "block";
+  }
+
+  function logout() {
+    siswaNama = "";
+    document.getElementById("username").value = "";
+    document.getElementById("password").value = "";
+    document.getElementById("scanResult").innerText = "";
+    if (scanner) {
+      scanner.stop().catch(() => {});
+    }
+    document.getElementById("loginSection").style.display = "block";
+    document.getElementById("scanSection").style.display = "none";
+    document.getElementById("historySection").style.display = "none";
   }
 </script>
 
